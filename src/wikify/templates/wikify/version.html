@@ -1,0 +1,38 @@
+{% extends "wikify/base.html" %}
+{% load i18n %}
+{% block title %}{{ instance.pk }}{% endblock %}
+
+{% block content %}
+    <div class="wikify-version">
+        <span class="wikify-date">
+            {{ version.revision.date_created|date:"DATETIME_FORMAT"}} ({{ version.revision.date_created|date:"T" }})
+        </span>
+        <span class="wikify-user">
+            {% if version.revision.user %}
+                {% blocktrans with user=version.revision.user %}by {{ user }}{% endblocktrans %}
+            {% else %}
+                {% blocktrans with user=version.revision.versionmeta_set.get.ip_address %}by {{ user }}{% endblocktrans %}
+            {% endif %}
+        </span>
+        <span class="wikify-comment">{{ version.revision.comment }}</span>
+        
+        <h1 class="wikify-title">{{ instance.pk }}</h1>
+    
+        <a class="wikify-editlink" href="?action=edit&version_id={{ version.id }}">{% trans "edit" %}</a>
+    
+        <div class="wikify-content">
+            {% if fields|length == 1 %}
+                {% for field, value in fields %}
+                    {{ value }}
+                {% endfor %}
+            {% else %}
+                {% for field, value in fields %}
+                    <div class="{{ field.name }}">
+                        <span class="wikify-label">{{ field.verbose_name|capfirst }}:</span>
+                        <span class="wikify-value">{{ value }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

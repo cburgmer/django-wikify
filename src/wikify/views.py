@@ -7,13 +7,14 @@ from reversion.models import Version
 from reversion import revision
 
 from wikify.models import VersionMeta
-from wikify.utils import get_model_primary_field, get_model_wiki_form
+from wikify.utils import get_model_wiki_form, model_field_iterator
 
 def wikify(model):
     def decorator(func):
         def inner(request, *args, **kwargs):
             # The primary key must be either given by the model field's name, or
             #   simply by Django's standard 'object_id'
+            primary_key = model._meta.pk.name
             object_id = kwargs.get(primary_key) or kwargs.get('object_id')
 
             # Get action
@@ -24,6 +25,8 @@ def wikify(model):
 
             if action == 'edit':
                 return edit(request, model, object_id)
+            elif action == 'version':
+                return version(request, model, object_id)
             elif action == 'versions':
                 return versions(request, model, object_id)
             else:
@@ -31,8 +34,6 @@ def wikify(model):
                 return func(request, *args, **kwargs)
 
         return inner
-
-    primary_key = get_model_primary_field(model)
 
     return decorator
 
@@ -94,6 +95,21 @@ def edit(request, model, object_id):
     return render_to_response('wikify/edit.html',
                               {'form': form,
                                'object_id': object_id,
+                               'version': version},
+                              context_instance=RequestContext(request))
+
+def version(request, model, object_id):
+    try:
+        version_id = int(request.GET.get('version_id'))
+        version = (Version.objects.get_for_object_reference(model, object_id)
+                                  .get(id=version_id))
+        instance = version.object_version.object
+    except (ValueError, Version.DoesNotExist):
+        raise Http404('Version not found')
+
+    return render_to_response('wikify/version.html',
+                              {'instance': instance,
+                               'fields': list(model_field_iterator(instance)),
                                'version': version},
                               context_instance=RequestContext(request))
 

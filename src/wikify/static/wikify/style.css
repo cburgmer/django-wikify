@@ -13,14 +13,17 @@
     margin-top: 8px;
 }
 
+.wikify-version .wikify-comment,
 .wikify-versions .wikify-comment {
     color: #777;
 }
 
+.wikify-version .wikify-dategroup .wikify-date,
 .wikify-versions .wikify-dategroup .wikify-date {
     font-weight: bold;
 }
 
+.wikify-version .wikify-dategroup .wikify-versions,
 .wikify-versions .wikify-dategroup .wikify-versions {
     margin-left: 1em;
 }

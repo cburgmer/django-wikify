@@ -1,10 +1,14 @@
 {% extends "wikify/base.html" %}
 {% load i18n %}
-{% block title %}{{ object_id }}{% endblock %}
+{% block title %}
+    {% blocktrans %}Edit "{{ object_id }}"{% endblocktrans %}
+{% endblock %}
 
 {% block content %}
     <div class="wikify-edit">
-        <h1>{{ object_id }}</h1>
+        <h1 class="wikify-title">
+            {% blocktrans %}Edit "{{ object_id }}"{% endblocktrans %}
+        </h1>
 
         <div class="wikify-content">
             <form action="" method="post">
