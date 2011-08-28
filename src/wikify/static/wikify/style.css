@@ -1,0 +1,26 @@
+.wikify-edit .wikify-content label {
+    display: inline-block;
+    vertical-align: top;
+    min-width: 6em;
+}
+
+.wikify-versions ul {
+    list-style: none;
+    padding: 0;
+}
+
+.wikify-versions li {
+    margin-top: 8px;
+}
+
+.wikify-versions .wikify-comment {
+    color: #777;
+}
+
+.wikify-versions .wikify-dategroup .wikify-date {
+    font-weight: bold;
+}
+
+.wikify-versions .wikify-dategroup .wikify-versions {
+    margin-left: 1em;
+}

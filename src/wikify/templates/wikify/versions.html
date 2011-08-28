@@ -1,0 +1,59 @@
+{% extends "wikify/base.html" %}
+{% load i18n %}
+{% block title %}
+    {% blocktrans %}All versions for {{ object_id }}{% endblocktrans %}
+{% endblock %}
+
+{% block content %}
+    <div class="wikify-versions">
+        <h1>
+            {% blocktrans %}All versions for {{ object_id }}{% endblocktrans %}
+        </h1>
+
+        <div class="wikify-content">
+            <ul class="wikify-dategroup">
+            {% regroup versions.object_list by revision.date_created|date:"DATE_FORMAT" as versions_by_date %}
+            {% for version_date in versions_by_date %}
+                <li>
+                    <span class="wikify-date">
+                        {{ version_date.grouper }} ({{ version_date.list.0.revision.date_created|date:"T" }})
+                    </span>
+                    <ul class="wikify-versions">
+                    {% for version in version_date.list %}
+                        <li>
+                            <span class="wikify-timestamp">
+                                {{ version.revision.date_created|date:"TIME_FORMAT" }}
+                            </span>
+                            <span class="wikify-user">
+                                {% if version.revision.user %}
+                                    {% blocktrans with user=version.revision.user %}by {{ user }}{% endblocktrans %}
+                                {% else %}
+                                    {% blocktrans with user=version.revision.versionmeta_set.get.ip_address %}by {{ user }}{% endblocktrans %}
+                                {% endif %}
+                            </span>
+                            <span class="wikify-comment">{{ version.revision.comment }}</span>
+                            <span class="wikify-editlink"><a href="?action=edit&version_id={{ version.id }}">{% trans "edit" %}</a></span>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+            </ul>
+            <div class="wikify-pagination">
+                <span class="wikify-steplinks">
+                    {% if versions.has_previous %}
+                        <a href="?action=versions&page={{ versions.previous_page_number }}">{% trans "previous" %}</a>
+                    {% endif %}
+
+                    <span class="wikify-current">
+                        {% blocktrans with no=versions.number count=versions.paginator.num_pages %}Page {{ no }} of {{ count }}.{% endblocktrans %}
+                    </span>
+
+                    {% if versions.has_next %}
+                        <a href="?action=versions&page={{ versions.next_page_number }}">{% trans "next" %}</a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+{% endblock %}
