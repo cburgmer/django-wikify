@@ -15,15 +15,17 @@
             {% endif %}
         </span>
         <span class="wikify-comment">{{ version.revision.comment }}</span>
-        
+
         <h1 class="wikify-title">{{ instance.pk }}</h1>
-    
+
         <a class="wikify-editlink" href="?action=edit&version_id={{ version.id }}">{% trans "edit" %}</a>
-    
+
         <div class="wikify-content">
             {% if fields|length == 1 %}
                 {% for field, value in fields %}
-                    {{ value }}
+                    <div class="{{ field.name }}">
+                        <span class="wikify-value">{{ value }}</span>
+                    </div>
                 {% endfor %}
             {% else %}
                 {% for field, value in fields %}
