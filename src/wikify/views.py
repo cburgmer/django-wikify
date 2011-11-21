@@ -132,6 +132,5 @@ def versions(request, model, object_id, paginate=20):
 
     return render_to_response('wikify/versions.html',
                               {'object_id': object_id,
-                               'versions': versions,
-                               'offset': p.count - versions.end_index()},
+                               'versions': versions},
                               context_instance=RequestContext(request))
