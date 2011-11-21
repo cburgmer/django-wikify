@@ -7,16 +7,16 @@
 
 <body>
     <h1>{{ object_id }}</h1>
-    
+
     {% if page %}
-        <a href="?action=edit">edit</a>, 
+        <a href="?action=edit">edit</a>,
         <a href="?action=versions">versions</a>
-        
+
         <p>
-            {{ page.content|markdown:"safe,wikilinks(end_url=)" }}
+            {{ page.content }}
         </p>
     {% else %}
         <a href="?action=edit">create</a>
     {% endif %}
-    
+
 </body>

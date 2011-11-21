@@ -16,6 +16,7 @@
 .wikify-version .wikify-comment,
 .wikify-versions .wikify-comment {
     color: #777;
+    font-style: italic;
 }
 
 .wikify-version .wikify-dategroup .wikify-date,
