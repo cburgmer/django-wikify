@@ -9,34 +9,6 @@ from reversion import revision
 from wikify.models import VersionMeta
 from wikify.utils import get_model_wiki_form, model_field_iterator
 
-def wikify(model):
-    def decorator(func):
-        def inner(request, *args, **kwargs):
-            # The primary key must be either given by the model field's name, or
-            #   simply by Django's standard 'object_id'
-            primary_key = model._meta.pk.name
-            object_id = kwargs.get(primary_key) or kwargs.get('object_id')
-
-            # Get action
-            if request.method == 'POST':
-                action = request.POST.get('action')
-            else:
-                action = request.GET.get('action')
-
-            if action == 'edit':
-                return edit(request, model, object_id)
-            elif action == 'version':
-                return version(request, model, object_id)
-            elif action == 'versions':
-                return versions(request, model, object_id)
-            else:
-                # No valid action given, call decorated view
-                return func(request, *args, **kwargs)
-
-        return inner
-
-    return decorator
-
 @transaction.commit_on_success
 def edit(request, model, object_id):
     """Edit or create a page."""

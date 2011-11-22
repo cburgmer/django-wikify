@@ -1,3 +1,2 @@
-from django.utils import unittest
-
 from wikify.tests.template_tests import *
+from wikify.tests.view_tests import *
