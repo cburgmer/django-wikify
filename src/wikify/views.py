@@ -3,7 +3,7 @@ from django.http import HttpResponseBadRequest, HttpResponseRedirect, Http404
 from django.template import RequestContext
 from django.db import transaction
 from django.core import paginator
-from reversion.models import Version
+from reversion import models
 from reversion import revision
 
 from wikify.models import VersionMeta
@@ -49,11 +49,11 @@ def edit(request, model, object_id):
             # User is editing the page based on an older version
             try:
                 version_id = int(request.GET.get('version_id'))
-                version = (Version.objects.get_for_object_reference(model,
-                                                                    object_id)
+                version = (models.Version.objects.get_for_object_reference(
+                                                               model, object_id)
                                           .get(id=version_id))
                 page = version.object_version.object
-            except (ValueError, Version.DoesNotExist):
+            except (ValueError, models.Version.DoesNotExist):
                 raise Http404('Version not found')
 
             form = form_class(instance=page)
@@ -73,10 +73,11 @@ def edit(request, model, object_id):
 def version(request, model, object_id):
     try:
         version_id = int(request.GET.get('version_id'))
-        version = (Version.objects.get_for_object_reference(model, object_id)
+        version = (models.Version.objects.get_for_object_reference(model,
+                                                                   object_id)
                                   .get(id=version_id))
         instance = version.object_version.object
-    except (ValueError, Version.DoesNotExist):
+    except (ValueError, models.Version.DoesNotExist):
         raise Http404('Version not found')
 
     return render_to_response('wikify/version.html',
@@ -90,7 +91,8 @@ def versions(request, model, object_id, paginate=20):
     if not object_id:
         return HttpResponseBadRequest("Invalid title")
 
-    all_versions = (Version.objects.get_for_object_reference(model, object_id)
+    all_versions = (models.Version.objects.get_for_object_reference(model,
+                                                                    object_id)
                                    .reverse()
                                    .select_related("revision"))
     p = paginator.Paginator(all_versions, paginate)
