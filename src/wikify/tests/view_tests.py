@@ -1,10 +1,42 @@
 import fudge
 
 from django.test import TestCase
+from django.db import models
+from django.http import HttpResponse
+from django.conf.urls.defaults import patterns
+import reversion
 
 from wikify.tests.utils import construct_version, construct_versions
+from wikify import wikify
+
+class Page(models.Model):
+    title = models.CharField(max_length=255, primary_key=True)
+    content = models.TextField(blank=True)
+
+    def __unicode__(self):
+        return self.title
+
+reversion.register(Page)
+
+@wikify(Page)
+def page_view(request, object_id):
+    try:
+        page = Page.objects.get(pk=object_id)
+    except Page.DoesNotExist:
+        page = None
+
+    return HttpResponse("OK")
+
+urlpatterns = patterns("",
+
+    (r'^(?P<object_id>[^/]+)$', page_view),
+
+)
 
 class VersionViewTest(TestCase):
+
+    urls = 'wikify.tests'
+
     @fudge.patch('reversion.models.Version')
     def test_version_view(self, Version):
         version = construct_version()
@@ -32,6 +64,9 @@ class VersionViewTest(TestCase):
 
 
 class VersionsViewTest(TestCase):
+
+    urls = 'wikify.tests'
+
     @fudge.patch('reversion.models.Version')
     def test_versions_view(self, Version):
         versions = construct_versions(version_count=2)
