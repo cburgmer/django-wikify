@@ -71,6 +71,7 @@ def edit(request, model, object_id):
                               context_instance=RequestContext(request))
 
 def version(request, model, object_id):
+    """Returns a versioned view of the given instance."""
     try:
         version_id = int(request.GET.get('version_id'))
         version = (models.Version.objects.get_for_object_reference(model,
@@ -88,8 +89,6 @@ def version(request, model, object_id):
 
 def versions(request, model, object_id, paginate=20):
     """Returns a paginated list of all versions of the given instance."""
-    if not object_id:
-        return HttpResponseBadRequest("Invalid title")
 
     all_versions = (models.Version.objects.get_for_object_reference(model,
                                                                     object_id)
