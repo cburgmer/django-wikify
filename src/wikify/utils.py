@@ -27,3 +27,17 @@ def model_field_iterator(instance):
     for field in instance._meta.fields:
         if field != instance._meta.pk:
             yield (field, getattr(instance, field.name))
+
+def version_field_iterator(old_version, new_version):
+    """
+    Iterates over the instance's fields (excluding the primary key) and returns
+    each field with its old and new value in the order of declaration inside the
+    model.
+    """
+    old_obj = old_version.object_version.object if old_version else None
+    new_obj = new_version.object_version.object
+    for field in new_obj._meta.fields:
+        if field != new_obj._meta.pk:
+            yield (field,
+                   getattr(old_obj, field.name, None),
+                   getattr(new_obj, field.name))

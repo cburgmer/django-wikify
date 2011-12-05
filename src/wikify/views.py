@@ -7,7 +7,8 @@ from reversion import models
 from reversion import revision
 
 from wikify.models import VersionMeta
-from wikify.utils import get_model_wiki_form, model_field_iterator
+from wikify.utils import get_model_wiki_form, model_field_iterator, \
+    version_field_iterator
 
 @transaction.commit_on_success
 def edit(request, model, object_id):
@@ -106,4 +107,30 @@ def versions(request, model, object_id, paginate=20):
     return render_to_response('wikify/versions.html',
                               {'object_id': object_id,
                                'versions': versions},
+                              context_instance=RequestContext(request))
+
+def diff(request, model, object_id):
+    """Returns the difference between the given version and the previous one."""
+
+    versions = models.Version.objects.get_for_object_reference(model, object_id)
+    try:
+        version_id = int(request.GET.get('version_id'))
+        # Get version and make sure it belongs to the given page
+        new_version = versions.get(id=version_id)
+    except (ValueError, models.Version.DoesNotExist):
+        raise Http404("Version not found")
+
+    old_version_q = versions.filter(id__lt=version_id).reverse()
+    old_version = old_version_q[0] if old_version_q else None
+
+    # Get the next version so we can provide a link
+    next_version_q = versions.filter(id__gt=version_id)
+    next_version = next_version_q[0] if next_version_q else None
+
+    context = {'old_version': old_version,
+               'new_version': new_version,
+               'fields': list(version_field_iterator(old_version, new_version)),
+               'next_version': next_version}
+    return render_to_response('wikify/diff.html',
+                              context,
                               context_instance=RequestContext(request))

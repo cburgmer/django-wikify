@@ -62,6 +62,15 @@ class VersionViewTest(TestCase):
         _, field_value = resp.context['fields'][0]
         self.assertEquals(instance.content, field_value)
 
+    def test_version_view_returns_400_for_invalid_version(self):
+        resp = self.client.get('/test',
+                               {'action': 'version', 'version_id': 'a42'})
+        self.assertEquals(resp.status_code, 404)
+
+    def test_version_view_returns_400_for_missing_version(self):
+        resp = self.client.get('/test',
+                               {'action': 'version', 'version_id': '42'})
+        self.assertEquals(resp.status_code, 404)
 
 class VersionsViewTest(TestCase):
 
@@ -129,3 +138,95 @@ class VersionsViewTest(TestCase):
         self.assertEquals(resp.status_code, 200)
 
         self.assertEquals(versions[20:], resp.context['versions'].object_list)
+
+
+class DiffViewTest(TestCase):
+
+    urls = 'wikify.tests'
+
+    @fudge.patch('reversion.models.Version')
+    def test_versions_view(self, Version):
+        old, new, next = construct_versions(version_count=3)
+        old_instance = old.object_version.object
+        new_instance = new.object_version.object
+
+        fake_queryset = fudge.Fake('QuerySet')
+        (fake_queryset.expects('get')
+                      .with_args(id=new.id)
+                      .returns(new))
+        (fake_queryset.expects('filter')
+                      .with_args(id__lt=new.id)
+                      .returns_fake(name='QuerySet')
+                      .provides('reverse')
+                      .returns([old]))
+        (fake_queryset.expects('filter')
+                      .with_args(id__gt=new.id)
+                      .returns([next]))
+
+        Version.has_attr(objects=fudge.Fake('VersionManager')
+                                      .expects('get_for_object_reference')
+                                      .returns(fake_queryset))
+        resp = self.client.get('/%s' % old_instance.pk,
+                               {'action': 'diff',
+                                'version_id': str(new.id)})
+
+        self.assertEquals(resp.status_code, 200)
+        self.assertIn('wikify/diff.html',
+                      [template.name for template in resp.templates])
+
+        self.assertEquals(old, resp.context['old_version'])
+        self.assertEquals(new, resp.context['new_version'])
+        self.assertEquals(next, resp.context['next_version'])
+
+        self.assertEquals(len(resp.context['fields']), 1)
+        _, old_value, new_value = resp.context['fields'][0]
+        self.assertEquals(old_instance.content, old_value)
+        self.assertEquals(new_instance.content, new_value)
+
+    @fudge.patch('reversion.models.Version')
+    def test_diff_view_for_single_version(self, Version):
+        new = construct_version()
+        new_instance = new.object_version.object
+
+        fake_queryset = fudge.Fake('QuerySet')
+        (fake_queryset.expects('get')
+                      .with_args(id=new.id)
+                      .returns(new))
+        (fake_queryset.expects('filter')
+                      .with_args(id__lt=new.id)
+                      .returns_fake(name='QuerySet')
+                      .provides('reverse')
+                      .returns([]))
+        (fake_queryset.expects('filter')
+                      .with_args(id__gt=new.id)
+                      .returns([]))
+
+        Version.has_attr(objects=fudge.Fake('VersionManager')
+                                      .expects('get_for_object_reference')
+                                      .returns(fake_queryset))
+        resp = self.client.get('/%s' % new_instance.pk,
+                               {'action': 'diff',
+                                'version_id': str(new.id)})
+
+        self.assertEquals(resp.status_code, 200)
+        self.assertIn('wikify/diff.html',
+                      [template.name for template in resp.templates])
+
+        self.assertEquals(None, resp.context['old_version'])
+        self.assertEquals(new, resp.context['new_version'])
+        self.assertEquals(None, resp.context['next_version'])
+
+        self.assertEquals(len(resp.context['fields']), 1)
+        _, old_value, new_value = resp.context['fields'][0]
+        self.assertEquals(None, old_value)
+        self.assertEquals(new_instance.content, new_value)
+
+    def test_diff_view_returns_400_for_invalid_version(self):
+        resp = self.client.get('/test',
+                               {'action': 'diff', 'version_id': 'a42'})
+        self.assertEquals(resp.status_code, 404)
+
+    def test_diff_view_returns_400_for_missing_version(self):
+        resp = self.client.get('/test',
+                               {'action': 'diff', 'version_id': '42'})
+        self.assertEquals(resp.status_code, 404)

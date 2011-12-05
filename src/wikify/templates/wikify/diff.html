@@ -1,0 +1,78 @@
+{% extends "wikify/base.html" %}
+{% load url from future %}
+{% load i18n markup %}
+{% load diff %}
+{% block title %}
+    {% blocktrans with object_id=new_version.object_id %}Difference for {{ object_id }}{% endblocktrans %}
+{% endblock %}
+
+{% block content %}
+    <div class="wikify-diff">
+        <h1 class="wikify-title">
+            {% blocktrans with object_id=new_version.object_id %}Difference for {{ object_id }}{% endblocktrans %}
+        </h1>
+
+        <div class="wikify-content">
+            <table>
+                <thead>
+                    <tr class="wikify-navigation">
+                        <td class="wikify-old" colspan="2">
+                            {% if old_version %}
+                                <a href="?action=diff&version_id={{ old_version.id }}">{% trans "previous" %}</a>
+                            {% endif %}
+                        </td>
+                        <td class="wikify-new" colspan="2">
+                            {% if next_version %}
+                                <a href="?action=diff&version_id={{ next_version.id }}">{% trans "next" %}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="wikify-old" colspan="2">
+                            {% if old_version %}
+                                <span class="wikify-date">
+                                    <a href="?action=version&version_id={{ old_version.id }}">{{ old_version.revision.date_created|date:"DATETIME_FORMAT" }} ({{ new_version.revision.date_created|date:"T" }})</a>
+                                </span>
+                                <span class="wikify-user">
+                                    {% if old_version.revision.user %}
+                                        {% blocktrans with user=old_version.revision.user %}by {{ user }}{% endblocktrans %}
+                                    {% else %}
+                                        {% blocktrans with user=old_version.revision.versionmeta_set.get.ip_address %}by {{ user }}{% endblocktrans %}
+                                    {% endif %}
+                                </span>
+                                <span class="wikify-comment">{{ old_version.revision.comment }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="wikify-new" colspan="2">
+                            <span class="wikify-date">
+                                    <a href="?action=version&version_id={{ new_version.id }}">{{ new_version.revision.date_created|date:"DATETIME_FORMAT" }} ({{ new_version.revision.date_created|date:"T" }})</a>
+                            </span>
+                            <span class="wikify-user">
+                                {% if new_version.revision.user %}
+                                    {% blocktrans with user=new_version.revision.user %}by {{ user }}{% endblocktrans %}
+                                {% else %}
+                                    {% blocktrans with user=new_version.revision.versionmeta_set.get.ip_address %}by {{ user }}{% endblocktrans %}
+                                {% endif %}
+                            </span>
+                            <span class="wikify-comment">{{ new_version.revision.comment }}</span>
+                        </td>
+                    </tr>
+                </thead>
+                <tbody>
+                {% if fields|length == 1 %}
+                    {% for field, old_value, new_value in fields %}
+                        {% context_diff_tr old_value new_value %}
+                    {% endfor %}
+                {% else %}
+                    {% for field, value in fields %}
+                        <tr colspan="4" class="{{ field.name }}">
+                            <span class="wikify-label">{{ field.verbose_name|capfirst }}:</span>
+                        </tr>
+                        {% context_diff_tr old_value new_value %}
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

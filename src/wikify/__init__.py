@@ -5,7 +5,7 @@ def wikify(model):
         def inner(request, *args, **kwargs):
             # Import lazily, so we don't import views directly, saves us some
             # trouble, e.g. https://bitbucket.org/kumar303/fudge/issue/17/module-import-order-influences-whether
-            from wikify.views import edit, version, versions
+            from wikify.views import edit, diff, version, versions
 
             # The primary key must be either given by the model field's name, or
             #   simply by Django's standard 'object_id'
@@ -20,6 +20,8 @@ def wikify(model):
 
             if action == 'edit':
                 return edit(request, model, object_id)
+            elif action == 'diff':
+                return diff(request, model, object_id)
             elif action == 'version':
                 return version(request, model, object_id)
             elif action == 'versions':

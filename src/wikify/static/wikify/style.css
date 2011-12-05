@@ -14,9 +14,14 @@
 }
 
 .wikify-version .wikify-comment,
-.wikify-versions .wikify-comment {
+.wikify-versions .wikify-comment,
+.wikify-diff .wikify-comment {
     color: #777;
     font-style: italic;
+}
+.wikify-version .wikify-comment,
+.wikify-diff .wikify-comment {
+    display: block;
 }
 
 .wikify-version .wikify-dategroup .wikify-date,
@@ -27,4 +32,72 @@
 .wikify-version .wikify-dategroup .wikify-versions,
 .wikify-versions .wikify-dategroup .wikify-versions {
     margin-left: 1em;
+}
+
+.wikify-diff thead td {
+    text-align: center;
+}
+
+.wikify-diff tr {
+    min-height: 1em;
+    height: 1em;
+}
+
+.wikify-diff .wikify-navigation .wikify-old {
+    text-align: left;
+    padding: 0 1em;
+}
+
+.wikify-diff .wikify-navigation .wikify-old a:before {
+    content:"< ";
+}
+
+.wikify-diff .wikify-navigation .wikify-new {
+    text-align: right;
+    padding: 0 1em;
+}
+
+.wikify-diff .wikify-navigation .wikify-new a:after {
+    content:" >";
+}
+
+.wikify-diff .wikify-lineno {
+    padding-top: 1em;
+    font-weight: bold;
+}
+
+.wikify-diff td.wikify-diffcontent {
+    width: 48%;
+}
+
+.wikify-diff td.wikify-changestatus {
+    width: 6px;
+    text-align: right;
+}
+
+.wikify-diff .wikify-nochange .wikify-left,
+.wikify-diff .wikify-nochange .wikify-right {
+    background-color: #eee;
+}
+
+.wikify-diff .wikify-change .wikify-diffcontent.wikify-left {
+    background-color: #ffa;
+}
+
+.wikify-diff .wikify-change .wikify-diffcontent.wikify-right {
+    background-color: #afa;
+}
+
+.wikify-diff .wikify-diffcontent {
+    white-space: pre-wrap;
+}
+
+.wikify-diff .wikify-diffcontent del {
+    color: red;
+    text-decoration: underline;
+}
+
+.wikify-diff .wikify-diffcontent ins {
+    color: #0a0;
+    text-decoration: underline;
 }

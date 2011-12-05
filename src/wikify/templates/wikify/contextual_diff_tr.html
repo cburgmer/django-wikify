@@ -1,0 +1,33 @@
+{% load i18n %}
+{% for left_line_idx, right_line_idx, diff in context_diff %}
+    <tr class="wikify-lineno">
+        <td colspan="2">
+            {% blocktrans with line=left_line_idx|add:"1" %}Line {{ line }}{% endblocktrans %}
+        </td>
+        <td colspan="2">
+            {% blocktrans with line=right_line_idx|add:"1" %}Line {{ line }}{% endblocktrans %}
+        </td>
+    </tr>
+    {% for change, left, right in diff %}
+        <tr class="{% if change %}wikify-change{% else %}wikify-nochange{% endif %}">
+            {% if left == None %}
+                <td class="wikify-changestatus"></td>
+                <td class="wikify-left"></td>
+            {% else %}
+                <td class="wikify-changestatus">
+                    {% if change %}-{% endif %}
+                </td>
+                <td class="wikify-diffcontent wikify-left">{% autoescape off %}{{ left }}{% endautoescape %}</td>
+            {% endif %}
+            {% if right == None %}
+                <td class="wikify-changestatus"></td>
+                <td class="wikify-right"></td>
+            {% else %}
+                <td class="wikify-changestatus">
+                    {% if change %}+{% endif %}
+                </td>
+                <td class="wikify-diffcontent wikify-right">{% autoescape off %}{{ right }}{% endautoescape %}</td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+{% endfor %}

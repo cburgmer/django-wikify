@@ -32,6 +32,7 @@
                                 {% endif %}
                             </span>
                             <span class="wikify-comment">{{ version.revision.comment }}</span>
+                            <span class="wikify-difflink"><a href="?action=diff&version_id={{ version.id }}">{% trans "diff" %}</a></span>
                             <span class="wikify-editlink"><a href="?action=edit&version_id={{ version.id }}">{% trans "edit" %}</a></span>
                         </li>
                     {% endfor %}

@@ -13,6 +13,18 @@ def _fake_meta(pk, other_fields):
 
     return fudge.Fake('Meta').has_attr(fields=fields, pk=fields[0])
 
+def construct_instance(title, content):
+    instance = (fudge.Fake('Page')
+                     .has_attr(pk=title)
+                     .has_attr(title=title)
+                     .has_attr(content=content)
+                     .has_attr(_meta=_fake_meta('title', ['content'])))
+    # Workaround for fudge creating a callable fake that throws a runtime
+    # error and Django not likeing that in its template guessing algorithm
+    # https://bitbucket.org/kumar303/fudge/issue/15/callable-fudgefake-returns-true-even
+    instance.is_callable().returns(instance)
+    return instance
+
 def construct_version(user_name=None, ip_address=None, comment=None,
                       instance=None, date_created=None):
     # Workaround for __str__ not being overwritable in Fudge!?
@@ -39,13 +51,11 @@ def construct_version(user_name=None, ip_address=None, comment=None,
                             .has_attr(versionmeta_set=fake_versionmeta_set)
                             .has_attr(date_created=date_created)
                             .has_attr(comment=comment))
-    instance = instance or (fudge.Fake('Page')
-                                    .has_attr(pk='test title')
-                                    .has_attr(title='test title')
-                                    .has_attr(content='test content')
-                                    .has_attr(_meta=_fake_meta('title',
-                                                               ['content'])))
+    instance = instance or construct_instance(title='test title',
+                                              content='test content')
 
+    page_class = (fudge.Fake('PageClass')
+                       .has_attr(_meta=_fake_meta('title', ['content'])))
     version = (fudge.Fake('Version')
                     .has_attr(id=42)
                     .has_attr(revision=fake_revision)
@@ -56,18 +66,14 @@ def construct_version(user_name=None, ip_address=None, comment=None,
     # error and Django not likeing that in its template guessing algorithm
     # https://bitbucket.org/kumar303/fudge/issue/15/callable-fudgefake-returns-true-even
     fake_revision.is_callable().returns(fake_revision)
-    instance.is_callable().returns(instance)
     version.is_callable().returns(version)
     return version
 
 def construct_versions(version_count, user_name=None, ip_address=None):
     versions = []
     for i in range(version_count):
-        instance = (fudge.Fake('Page')
-                            .has_attr(pk='test title')
-                            .has_attr(content='content_%s' % i)
-                            .has_attr(_meta=_fake_meta('title',
-                                                        ['content'])))
+        instance = construct_instance(title='test title',
+                                      content='content_%s' % i)
         date_created = (datetime.datetime.utcnow()
                         - datetime.timedelta(hours=i))
         version = construct_version(user_name=user_name,
@@ -76,4 +82,3 @@ def construct_versions(version_count, user_name=None, ip_address=None):
                                             instance=instance)
         versions.append(version)
     return versions
-
