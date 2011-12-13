@@ -26,7 +26,7 @@ class Page(models.Model):
 
 reversion.register(Page)
 
-@wikify(Page)
+@wikify('wikify.tests.Page')
 def page_view(request, object_id):
     try:
         page = Page.objects.get(pk=object_id)
