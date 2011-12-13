@@ -1,4 +1,5 @@
 import fudge
+import unittest
 
 from django.test import TestCase
 from django.db import models
@@ -8,6 +9,13 @@ import reversion
 
 from wikify.tests.utils import construct_version, construct_versions
 from wikify import wikify
+
+try:
+    from wikify.diff_utils import side_by_side_diff, context_diff
+except ImportError:
+    can_test_diff = False
+else:
+    can_test_diff = True
 
 class Page(models.Model):
     title = models.CharField(max_length=255, primary_key=True)
@@ -140,6 +148,7 @@ class VersionsViewTest(TestCase):
         self.assertEquals(versions[20:], resp.context['versions'].object_list)
 
 
+@unittest.skipUnless(can_test_diff, "Diff match patch library not installed")
 class DiffViewTest(TestCase):
 
     urls = 'wikify.tests'

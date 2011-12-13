@@ -14,6 +14,13 @@ from django import forms
 from wikify.tests.utils import (construct_instance, construct_version,
                                 construct_versions)
 
+try:
+    from wikify.diff_utils import side_by_side_diff, context_diff
+except ImportError:
+    can_test_diff = False
+else:
+    can_test_diff = True
+
 class PageForm(forms.Form):
     title = forms.CharField(max_length=255)
     content = forms.CharField()
@@ -258,6 +265,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
                                 "a:contains('previous')")
 
 
+@unittest.skipUnless(can_test_diff, "Diff match patch library not installed")
 class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
     def setUp(self):
         self.factory = RequestFactory()
