@@ -17,12 +17,20 @@ Luckily Django has already plenty of those to offer.
 Features
 ========
 
+- Page edit, diff view, old version view, list of all page versions
 - Model versioning (built on the nice django-reversion)
-- Page edit, versioned view, list of all page versions
 - View decorator to turn your view into a wiki page
+
+Each version stores:
+
+- author information (including IP address of anonymous users)
+- date & time of change
+- an optional comment
+- a copy of the instance at this time
 
 Requirements
 ============
 
-  * Django 1.3
-  * django-reversion >= 1.4
+- Django >= 1.3
+- django-reversion >= 1.4
+- diff-match-patch

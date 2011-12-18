@@ -1,4 +1,4 @@
-To run this example, install ``wikify`` and ``markdown`` then run::
+To run this example, install the dependencies together with ``wikify`` and run::
 
     $ python manage.py syncdb
     $ python manage.py runserver
