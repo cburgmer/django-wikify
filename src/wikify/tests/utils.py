@@ -3,7 +3,7 @@ import datetime
 import fudge
 
 def _fake_meta(pk, other_fields):
-    fields = [fudge.Fake('Field').has_attr(name=field_name)
+    fields = [fudge.Fake('Field').has_attr(name=field_name).is_a_stub()
               for field_name in [pk] + other_fields]
     # Workaround for fudge creating a callable fake that throws a runtime
     # error and Django not likeing that in its template guessing algorithm
@@ -11,7 +11,9 @@ def _fake_meta(pk, other_fields):
     for field in fields:
         field.is_callable().returns(field)
 
-    return fudge.Fake('Meta').has_attr(fields=fields, pk=fields[0])
+    return fudge.Fake('Meta').has_attr(fields=fields, pk=fields[0],
+                                       many_to_many=[])
+
 
 def construct_instance(title, content):
     instance = (fudge.Fake('Page')

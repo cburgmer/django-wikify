@@ -1,3 +1,4 @@
+from urllib2 import urlparse
 import fudge
 import unittest
 
@@ -7,7 +8,8 @@ from django.http import HttpResponse
 from django.conf.urls.defaults import patterns
 import reversion
 
-from wikify.tests.utils import construct_version, construct_versions
+from wikify.tests.utils import (construct_instance, construct_version,
+                                construct_versions)
 from wikify import wikify
 
 try:
@@ -40,6 +42,141 @@ urlpatterns = patterns("",
     (r'^(?P<object_id>[^/]+)$', page_view),
 
 )
+
+class EditViewTest(TestCase):
+
+    urls = 'wikify.tests'
+
+    @fudge.patch('wikify.tests.Page.objects')
+    @fudge.patch('wikify.utils.get_model_wiki_form')
+    def test_edit_view_renders_form_on_existing_instance(self, page_manager,
+                                                         get_model_wiki_form):
+        instance = construct_instance('test title', 'test content')
+
+        page_manager.expects('get').with_args(pk=instance.pk).returns(instance)
+        fake_form = "fake form"
+        (get_model_wiki_form.is_callable()
+                            .returns_fake().is_callable()
+                                           .with_args(instance=instance)
+                                           .returns(fake_form))
+
+        resp = self.client.get('/%s' % instance.pk, {'action': 'edit'})
+
+        self.assertEquals(resp.status_code, 200)
+        self.assertIn('wikify/edit.html',
+                      [template.name for template in resp.templates])
+
+        self.assertEquals(fake_form, resp.context['form'])
+        self.assertEquals(instance.pk, resp.context['object_id'])
+        self.assertEquals(None, resp.context['version'])
+
+    @fudge.patch('wikify.tests.Page.objects')
+    @fudge.patch('wikify.utils.get_model_wiki_form')
+    def test_edit_view_renders_form_for_creating_an_instance(self, page_manager,
+                                                           get_model_wiki_form):
+
+        object_id = "non existing item"
+        (page_manager.expects('get').with_args(pk=object_id)
+                                    .raises(Page.DoesNotExist))
+        fake_form = "fake form"
+        (get_model_wiki_form.is_callable()
+                            .returns_fake().is_callable()
+                                           .returns(fake_form))
+
+        resp = self.client.get('/%s' % object_id, {'action': 'edit'})
+
+        self.assertEquals(resp.status_code, 200)
+        self.assertIn('wikify/edit.html',
+                      [template.name for template in resp.templates])
+
+        self.assertEquals(fake_form, resp.context['form'])
+        self.assertEquals(object_id, resp.context['object_id'])
+        self.assertEquals(None, resp.context['version'])
+
+    @fudge.patch('wikify.tests.Page.objects')
+    @fudge.patch('reversion.models.Version.objects')
+    @fudge.patch('wikify.utils.get_model_wiki_form')
+    def test_edit_view_renders_form_for_instance_version(self,
+                                                         page_manager,
+                                                         version_manager,
+                                                         get_model_wiki_form):
+
+        version = construct_version()
+        instance = version.object_version.object
+        (version_manager.expects('get_for_object_reference')
+                        .with_args(Page, instance.pk)
+                        .returns_fake().expects('get')
+                                       .with_args(id=42)
+                                       .returns(version))
+        fake_form = "fake form"
+        (get_model_wiki_form.is_callable()
+                            .returns_fake().is_callable()
+                                           .returns(fake_form))
+
+        resp = self.client.get('/%s' % instance.pk,
+                               {'action': 'edit', 'version_id': '42'})
+
+        self.assertEquals(resp.status_code, 200)
+        self.assertIn('wikify/edit.html',
+                      [template.name for template in resp.templates])
+
+        self.assertEquals(fake_form, resp.context['form'])
+        self.assertEquals(instance.pk, resp.context['object_id'])
+        self.assertEquals(version, resp.context['version'])
+
+    @fudge.patch('wikify.tests.Page.objects')
+    @fudge.patch('wikify.utils.get_model_wiki_form')
+    def test_edit_view_creates_a_new_instance(self, page_manager,
+                                              get_model_wiki_form):
+
+        object_id = "non existing item"
+        (page_manager.expects('get').with_args(pk=object_id)
+                                    .raises(Page.DoesNotExist))
+
+        cleaned_data = fudge.Fake('CleanedData').provides('get').returns(None)
+        fake_form = (fudge.Fake('Form').expects('is_valid').returns(True)
+                                       .expects('save')
+                                       .has_attr(cleaned_data=cleaned_data))
+        (get_model_wiki_form.is_callable()
+                            .returns_fake().is_callable()
+                                           .returns(fake_form))
+
+        resp = self.client.post('/%s' % object_id, {'action': 'edit'})
+
+        self.assertEquals(resp.status_code, 302)
+        location = urlparse.urlsplit(resp['location']).path
+        self.assertEquals(urlparse.unquote(location),
+                          '/%s' % object_id)
+
+    @fudge.patch('wikify.tests.Page.objects')
+    @fudge.patch('wikify.utils.get_model_wiki_form')
+    def test_edit_view_saves_an_existing_instance(self, page_manager,
+                                                  get_model_wiki_form):
+
+        instance = construct_instance('test title', 'test content')
+        (page_manager.expects('get').with_args(pk=instance.pk)
+                                    .returns(instance))
+
+        cleaned_data = fudge.Fake('CleanedData').provides('get').returns(None)
+        fake_form = (fudge.Fake('Form').expects('is_valid').returns(True)
+                                       .expects('save')
+                                       .has_attr(cleaned_data=cleaned_data))
+        (get_model_wiki_form.is_callable()
+                            .returns_fake().is_callable()
+                                           .returns(fake_form))
+
+        resp = self.client.post('/%s' % instance.pk, {'action': 'edit'})
+
+        self.assertEquals(resp.status_code, 302)
+        location = urlparse.urlsplit(resp['location']).path
+        self.assertEquals(urlparse.unquote(location),
+                          '/%s' % instance.pk)
+
+# TODO
+# test that comment is saved
+# test invalid form
+# test that anonymous user's IP is saved
+# test that a new version is created
 
 class VersionViewTest(TestCase):
 
@@ -79,6 +216,7 @@ class VersionViewTest(TestCase):
         resp = self.client.get('/test',
                                {'action': 'version', 'version_id': '42'})
         self.assertEquals(resp.status_code, 404)
+
 
 class VersionsViewTest(TestCase):
 

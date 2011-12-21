@@ -7,14 +7,13 @@ from reversion import models
 from reversion import revision
 
 from wikify.models import VersionMeta
-from wikify.utils import get_model_wiki_form, model_field_iterator, \
-    version_field_iterator
+from wikify import utils
 
 @transaction.commit_on_success
 def edit(request, model, object_id):
     """Edit or create a page."""
 
-    form_class = get_model_wiki_form(model)
+    form_class = utils.get_model_wiki_form(model)
     version = None
 
     if request.method == 'POST':
@@ -52,7 +51,7 @@ def edit(request, model, object_id):
                 version_id = int(request.GET.get('version_id'))
                 version = (models.Version.objects.get_for_object_reference(
                                                                model, object_id)
-                                          .get(id=version_id))
+                                         .get(id=version_id))
                 page = version.object_version.object
             except (ValueError, models.Version.DoesNotExist):
                 raise Http404('Version not found')
@@ -84,7 +83,8 @@ def version(request, model, object_id):
 
     return render_to_response('wikify/version.html',
                               {'instance': instance,
-                               'fields': list(model_field_iterator(instance)),
+                               'fields': list(utils.model_field_iterator(
+                                                                     instance)),
                                'version': version},
                               context_instance=RequestContext(request))
 
@@ -129,7 +129,8 @@ def diff(request, model, object_id):
 
     context = {'old_version': old_version,
                'new_version': new_version,
-               'fields': list(version_field_iterator(old_version, new_version)),
+               'fields': list(utils.version_field_iterator(old_version,
+                                                           new_version)),
                'next_version': next_version}
     return render_to_response('wikify/diff.html',
                               context,
