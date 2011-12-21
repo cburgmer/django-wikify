@@ -9,7 +9,8 @@ from django.shortcuts import render
 from django.template import defaultfilters
 from django.conf import settings
 from django.core import paginator
-from django import forms
+from django.db import models
+from django.forms.models import modelform_factory
 
 from wikify.tests.utils import (construct_instance, construct_version,
                                 construct_versions)
@@ -21,9 +22,9 @@ except ImportError:
 else:
     can_test_diff = True
 
-class PageForm(forms.Form):
-    title = forms.CharField(max_length=255)
-    content = forms.CharField()
+class Page(models.Model):
+    title = models.CharField(max_length=255, primary_key=True)
+    content = models.TextField(blank=True)
 
 
 class TemplateTestMixin(object):
@@ -46,7 +47,11 @@ class EditTemplateTest(TemplateTestMixin, unittest.TestCase):
         self.request = self.factory.get('/test', {'action': 'edit'})
 
         self.template = 'wikify/edit.html'
-        form = PageForm()
+
+        self.instance = Page(title="test title", content="test content")
+        form_class = modelform_factory(Page)
+        form = form_class(instance=self.instance)
+
         self.context = {'form': form,
                         'object_id': 'test',
                         'version': None}
@@ -64,8 +69,12 @@ class EditTemplateTest(TemplateTestMixin, unittest.TestCase):
     def test_edit_template_has_form_fields(self):
         response = render(self.request, self.template, self.context)
 
-        self.assertHasElement(response, "input[name='title']")
-        self.assertHasElement(response, "input[name='content']")
+        self.assertHasElement(response,
+                              "input[name='title'][value='%s']"
+                              % self.instance.title)
+        self.assertHasElement(response,
+                              "textarea[name='content']:contains('%s')"
+                              % self.instance.content)
 
 
 class VersionTemplateTest(TemplateTestMixin, unittest.TestCase):
