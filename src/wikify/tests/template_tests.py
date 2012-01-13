@@ -312,10 +312,10 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
         response = render(request, self.template, context)
 
         self.assertHasElement(response,
-                              ".wikify-content:contains('%s')"
+                              ".wikify-content del:contains('%s')"
                               % 'abcdefg')
         self.assertHasElement(response,
-                              ".wikify-content:contains('%s')"
+                              ".wikify-content ins:contains('%s')"
                               % '123456')
 
     def test_diff_template_has_change_date(self):
