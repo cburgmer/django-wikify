@@ -8,14 +8,14 @@
             {% blocktrans with line=right_line_idx|add:"1" %}Line {{ line }}{% endblocktrans %}
         </td>
     </tr>
-    {% for change, left, right in diff %}
-        <tr class="{% if change %}wikify-change{% else %}wikify-nochange{% endif %}">
+    {% for left, right in diff %}
+        <tr class="{% if left != right %}wikify-change{% else %}wikify-nochange{% endif %}">
             {% if left == None %}
                 <td class="wikify-changestatus"></td>
                 <td class="wikify-left"></td>
             {% else %}
                 <td class="wikify-changestatus">
-                    {% if change %}-{% endif %}
+                    {% if left != right %}-{% endif %}
                 </td>
                 <td class="wikify-diffcontent wikify-left">{% autoescape off %}{{ left }}{% endautoescape %}</td>
             {% endif %}
@@ -24,7 +24,7 @@
                 <td class="wikify-right"></td>
             {% else %}
                 <td class="wikify-changestatus">
-                    {% if change %}+{% endif %}
+                    {% if left != right %}+{% endif %}
                 </td>
                 <td class="wikify-diffcontent wikify-right">{% autoescape off %}{{ right }}{% endautoescape %}</td>
             {% endif %}

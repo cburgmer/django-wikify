@@ -13,22 +13,22 @@ class SideBySideDiffTest(unittest.TestCase):
     def test_one_line_with_change(self):
         self.assertEqual(list(side_by_side_diff("old text",
                                                 "new text")),
-                         [(True, "<del>old</del> text", "<ins>new</ins> text")])
+                         [("<del>old</del> text", "<ins>new</ins> text")])
 
     def test_one_line_with_insertion(self):
         self.assertEqual(list(side_by_side_diff("text",
                                                 "new text")),
-                         [(True, "text", "<ins>new </ins>text")])
+                         [("text", "<ins>new </ins>text")])
 
     def test_one_line_with_deletion(self):
         self.assertEqual(list(side_by_side_diff("old text",
                                                 "text")),
-                         [(True, "<del>old </del>text", "text")])
+                         [("<del>old </del>text", "text")])
 
     def test_one_line_without_change(self):
         self.assertEqual(list(side_by_side_diff("text",
                                                 "text")),
-                         [(False, "text", "text")])
+                         [("text", "text")])
 
     def test_empty_text_without_change_has_no_diff(self):
         self.assertEqual(list(side_by_side_diff("",
@@ -38,83 +38,83 @@ class SideBySideDiffTest(unittest.TestCase):
     def test_empty_text_with_insertion(self):
         self.assertEqual(list(side_by_side_diff("",
                                                 "new")),
-                         [(True, None, "<ins>new</ins>")])
+                         [(None, "<ins>new</ins>")])
 
     def test_empty_line_with_insertion(self):
         self.assertEqual(list(side_by_side_diff("\n",
                                                 "new\n")),
-                         [(True, "", "<ins>new</ins>"),
-                          (False, "", "")])
+                         [("", "<ins>new</ins>"),
+                          ("", "")])
 
     def test_empty_lines_with_insertion(self):
         self.assertEqual(list(side_by_side_diff("\n\n\n",
                                                 "\n\nnew\n")),
-                         [(False, "", ""),
-                          (False, "", ""),
-                          (True, "", "<ins>new</ins>"),
-                          (False, "", "")])
+                         [("", ""),
+                          ("", ""),
+                          ("", "<ins>new</ins>"),
+                          ("", "")])
 
     def test_text_with_full_deletion(self):
         self.assertEqual(list(side_by_side_diff("old",
                                                 "")),
-                         [(True, "<del>old</del>", None)])
+                         [("<del>old</del>", None)])
 
     def test_line_with_full_deletion(self):
         self.assertEqual(list(side_by_side_diff("old\n",
                                                 "\n")),
-                         [(True, "<del>old</del>", ""),
-                          (False, "", "")])
+                         [("<del>old</del>", ""),
+                          ("", "")])
 
     def test_empty_lines_with_deletion(self):
         self.assertEqual(list(side_by_side_diff("\n\nold\n",
                                                 "\n\n\n")),
-                         [(False, "", ""),
-                          (False, "", ""),
-                          (True, "<del>old</del>", ""),
-                          (False, "", "")])
+                         [("", ""),
+                          ("", ""),
+                          ("<del>old</del>", ""),
+                          ("", "")])
 
     def test_two_lines_with_one_change(self):
         self.assertEqual(list(side_by_side_diff("old text\nline",
                                                 "new text\nline")),
-                         [(True, "<del>old</del> text", "<ins>new</ins> text"),
-                          (False, "line", "line")])
+                         [("<del>old</del> text", "<ins>new</ins> text"),
+                          ("line", "line")])
 
     def test_two_lines_without_change(self):
         self.assertEqual(list(side_by_side_diff("text\nline",
                                                 "text\nline")),
-                         [(False, "text", "text"),
-                          (False, "line", "line")])
+                         [("text", "text"),
+                          ("line", "line")])
 
     def test_line_insertion_at_beginning(self):
         self.assertEqual(list(side_by_side_diff("line",
                                                 "new text\nline")),
-                         [(True, None, "<ins>new text</ins>"),
-                          (False, "line", "line")])
+                         [(None, "<ins>new text</ins>"),
+                          ("line", "line")])
 
     def test_line_insertion_at_end(self):
         self.assertEqual(list(side_by_side_diff("line",
                                                 "line\nnew text")),
-                         [(False, "line", "line"),
-                          (True, None, "<ins>new text</ins>")])
+                         [("line", "line"),
+                          (None, "<ins>new text</ins>")])
 
     def test_line_insertion_in_middle(self):
         self.assertEqual(list(side_by_side_diff("line\nanother line",
                                                 "line\nnew text\nanother line")),
-                         [(False, "line", "line"),
-                          (True, None, "<ins>new text</ins>"),
-                          (False, "another line", "another line")])
+                         [("line", "line"),
+                          (None, "<ins>new text</ins>"),
+                          ("another line", "another line")])
 
     def test_that_inserted_newline_keeps_changes_minimal(self):
         self.assertEqual(list(side_by_side_diff("a long line with words",
                                                 "a long line\nwith words")),
-                         [(True, "a long line<del> </del>with words", "a long line"),
-                          (True, None, "with words")])
+                         [("a long line<del> </del>with words", "a long line"),
+                          (None, "with words")])
 
     def test_inserted_newline_with_text_change(self):
         self.assertEqual(list(side_by_side_diff("a long line with words",
                                                 "a long line\nand words")),
-                         [(True, "a long line<del> with</del> words", "a long line"),
-                          (True, None, "<ins>and</ins> words")])
+                         [("a long line<del> with</del> words", "a long line"),
+                          (None, "<ins>and</ins> words")])
 
 
 @unittest.skipUnless(can_test_diff, "Diff match patch library not installed")

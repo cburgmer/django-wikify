@@ -19,16 +19,16 @@ def side_by_side_diff(old_text, new_text):
         ls, rs = open_change_site
         # Get unchanged parts onto the right line
         if ls[0] == rs[0]:
-            yield (False, ls[0], rs[0])
+            yield (ls[0], rs[0])
             for l, r in itertools.izip_longest(ls[1:], rs[1:]):
-                yield (True, l, r)
+                yield (l, r)
         elif ls[-1] == rs[-1]:
             for l, r in itertools.izip_longest(ls[:-1], rs[:-1]):
-                yield (l != r, l, r)
-            yield (False, ls[-1], rs[-1])
+                yield (l, r)
+            yield (ls[-1], rs[-1])
         else:
             for l, r in itertools.izip_longest(ls, rs):
-                yield (True, l, r)
+                yield (l, r)
 
     # Treat an empty string and "None" as same
     old_text = old_text or ''
@@ -83,7 +83,7 @@ def side_by_side_diff(old_text, new_text):
 
                 # Directly push out lines until last
                 for line in lines[:-1]:
-                    yield (False, line, line)
+                    yield (line, line)
 
                 # Keep last line open
                 open_change_site = ([lines[-1]], [lines[-1]])
@@ -119,9 +119,9 @@ def context_diff(diff, context=2):
 
     left_line_idx = right_line_idx = 0
     for entry in diff:
-        is_change, left, right = entry
+        left, right = entry
 
-        if is_change:
+        if left != right:
             if current_change_context and len(unconsumed_context) <= context:
                 # Merge change with preceding change as contexts overlap
                 current_change_context.extend(unconsumed_context)
