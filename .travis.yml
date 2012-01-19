@@ -1,0 +1,7 @@
+rvm:
+   - 1.9.3
+before_script:
+  - sudo pip install django django-reversion diff-match-patch
+  - sudo python setup.py install
+script:
+  - cd example && python manage.py test
