@@ -11,9 +11,10 @@ from django.conf import settings
 from django.core import paginator
 from django.db import models
 from django.forms.models import modelform_factory
+from django.contrib.auth.models import User
+import reversion
 
-from wikify.tests.utils import (construct_instance, construct_version,
-                                construct_versions)
+from wikify.models import VersionMeta
 
 try:
     from wikify.diff_utils import side_by_side_diff, context_diff
@@ -22,10 +23,45 @@ except ImportError:
 else:
     can_test_diff = True
 
+# App environment
+
 class Page(models.Model):
     title = models.CharField(max_length=255, primary_key=True)
     content = models.TextField(blank=True)
 
+    class Meta:
+        # Hack: Cannot use an app_label that is under South control, due to http://south.aeracode.org/ticket/520
+        app_label = "auth"
+
+
+# Helpers
+
+page_pk_counter = 0;
+
+def get_unique_page_title():
+    global page_pk_counter
+    page_pk_counter += 1;
+    return "test title %d" % page_pk_counter
+
+
+def construct_versions(version_count):
+    assert version_count > 0
+
+    with reversion.revision:
+        instance = Page.objects.create(title=get_unique_page_title(),
+                                       content="content_0")
+        reversion.revision.comment = 'Version 0'
+
+    versions = []
+    for i in range(1, version_count):
+        with reversion.revision:
+            instance.content = "content_%s" % i
+            instance.save()
+            reversion.revision.comment = 'Version %s' % i
+
+    return reversion.get_for_object_reference(Page, instance.pk).order_by("pk")
+
+# Tests
 
 class TemplateTestMixin(object):
     def assertHasElement(self, response, css_selector):
@@ -103,7 +139,11 @@ class VersionTemplateTest(TemplateTestMixin, unittest.TestCase):
         return request, context
 
     def test_version_template_has_content(self):
-        version = construct_version()
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+        version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
         request, context = self._prepare_request(version)
         response = render(request, self.template, context)
 
@@ -115,7 +155,12 @@ class VersionTemplateTest(TemplateTestMixin, unittest.TestCase):
 
     def test_version_template_has_comment(self):
         comment = 'test comment'
-        version = construct_version(comment=comment)
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.comment = comment
+        version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
         request, context = self._prepare_request(version)
         response = render(request, self.template, context)
 
@@ -123,7 +168,11 @@ class VersionTemplateTest(TemplateTestMixin, unittest.TestCase):
                               ".wikify-comment:contains('%s')" % comment)
 
     def test_version_template_has_date_of_last_change(self):
-        version = construct_version()
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+        version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
         request, context = self._prepare_request(version)
         response = render(request, self.template, context)
 
@@ -133,17 +182,28 @@ class VersionTemplateTest(TemplateTestMixin, unittest.TestCase):
                               ".wikify-date:contains('%s')" % date)
 
     def test_version_template_has_user_of_last_change(self):
-        user_name = 'test user'
-        version = construct_version(user_name=user_name)
+        user = User.objects.create(username='test user')
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.user = user
+        version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
         request, context = self._prepare_request(version)
         response = render(request, self.template, context)
 
         self.assertHasElement(response,
-                              ".wikify-user:contains('%s')" % user_name)
+                              ".wikify-user:contains('%s')" % 'test user')
 
     def test_version_template_has_ip_of_last_change(self):
         ip_address = '127.0.0.1'
-        version = construct_version(ip_address=ip_address)
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.add_meta(VersionMeta,
+                                        ip_address=ip_address)
+        version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
         request, context = self._prepare_request(version)
         response = render(request, self.template, context)
 
@@ -158,9 +218,9 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
 
     def _prepare_request(self, object_id=None, versions=None, page=1):
         assert (not object_id or not versions
-                or versions[-1].object_version.object.pk == object_id)
+                or list(versions)[-1].object_version.object.pk == object_id)
 
-        object_id = object_id or versions[-1].object_version.object.pk
+        object_id = object_id or list(versions)[-1].object_version.object.pk
         request = self.factory.get('/%s' % object_id,
                                    {'action': 'versions'})
 
@@ -172,7 +232,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
         return request, context
 
     def test_versions_template_has_entries(self):
-        versions = construct_versions(version_count=2)
+        versions = construct_versions(2)
         request, context = self._prepare_request(versions=versions)
         response = render(request, self.template, context)
 
@@ -188,7 +248,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
                               % versions[1].revision.comment)
 
     def test_versions_template_has_change_time(self):
-        versions = construct_versions(version_count=1)
+        versions = construct_versions(1)
         request, context = self._prepare_request(versions=versions)
         response = render(request, self.template, context)
 
@@ -202,27 +262,36 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
                               ".wikify-timestamp:contains('%s')" % time)
 
     def test_versions_template_has_author(self):
-        user_name = 'test_user'
-        versions = construct_versions(version_count=1,
-                                            user_name=user_name)
-        request, context = self._prepare_request(versions=versions)
+        user = User.objects.create(username='test_user')
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.user = user
+        version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
+        request, context = self._prepare_request(versions=[version])
         response = render(request, self.template, context)
 
         self.assertHasElement(response,
-                              ".wikify-user:contains('%s')" % user_name)
+                              ".wikify-user:contains('%s')" % user.username)
 
     def test_versions_template_shows_ip_address(self):
         ip_address = '127.0.0.1'
-        versions = construct_versions(version_count=1,
-                                            ip_address=ip_address)
-        request, context = self._prepare_request(versions=versions)
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.add_meta(VersionMeta,
+                                        ip_address=ip_address)
+        version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
+        request, context = self._prepare_request(versions=[version])
         response = render(request, self.template, context)
 
         self.assertHasElement(response,
                               ".wikify-user:contains('%s')" % ip_address)
 
     def test_versions_template_has_comment(self):
-        versions = construct_versions(version_count=1)
+        versions = construct_versions(1)
         request, context = self._prepare_request(versions=versions)
         response = render(request, self.template, context)
 
@@ -232,7 +301,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
 
 
     def test_versions_template_has_page_count(self):
-        versions = construct_versions(version_count=30)
+        versions = construct_versions(30)
         request, context = self._prepare_request(versions=versions)
         response = render(request, self.template, context)
 
@@ -240,7 +309,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
                               ".wikify-current:contains('Page 1 of 3')")
 
     def test_versions_template_shows_next_page(self):
-        versions = construct_versions(version_count=11)
+        versions = construct_versions(11)
         request, context = self._prepare_request(versions=versions)
         response = render(request, self.template, context)
 
@@ -248,7 +317,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
                               "a:contains('next')")
 
     def test_versions_template_shows_previous_page(self):
-        versions = construct_versions(version_count=11)
+        versions = construct_versions(11)
         request, context = self._prepare_request(versions=versions,
                                                  page=2)
         response = render(request, self.template, context)
@@ -257,7 +326,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
                               "a:contains('previous')")
 
     def test_versions_template_shows_no_next_when_on_last_page(self):
-        versions = construct_versions(version_count=11)
+        versions = construct_versions(11)
         request, context = self._prepare_request(versions=versions,
                                                  page=2)
         response = render(request, self.template, context)
@@ -266,7 +335,7 @@ class VersionsTemplateTest(TemplateTestMixin, unittest.TestCase):
                                 "a:contains('next')")
 
     def test_versions_template_shows_no_previous_if_on_first_page(self):
-        versions = construct_versions(version_count=11)
+        versions = construct_versions(11)
         request, context = self._prepare_request(versions=versions)
         response = render(request, self.template, context)
 
@@ -304,10 +373,16 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
         return request, context
 
     def test_diff_template_has_content(self):
-        old_version = construct_version(instance=construct_instance('test',
-                                                                    'abcdefg'))
-        new_version = construct_version(instance=construct_instance('test',
-                                                                    '123456'))
+        with reversion.revision:
+            instance = Page.objects.create(title="some title",
+                                           content='abcdefg')
+        with reversion.revision:
+            instance.content = '123456'
+            instance.save()
+
+        new_version, old_version = reversion.get_for_object_reference(Page,
+                                                                    instance.pk)
+
         request, context = self._prepare_request(old_version, new_version)
         response = render(request, self.template, context)
 
@@ -319,7 +394,7 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
                               % '123456')
 
     def test_diff_template_has_change_date(self):
-        old_version, new_version = construct_versions(version_count=2)
+        old_version, new_version = construct_versions(2)
         request, context = self._prepare_request(old_version, new_version)
         response = render(request, self.template, context)
 
@@ -335,24 +410,46 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
                               % new_date)
 
     def test_diff_template_has_users_of_changes(self):
-        user_name1 = 'test user 1'
-        old_version = construct_version(user_name=user_name1)
-        user_name2 = 'test user 2'
-        new_version = construct_version(user_name=user_name2)
+        user1 = User.objects.create(username='test user 1')
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.user = user1
+
+        user2 = User.objects.create(username='test user 2')
+        with reversion.revision:
+            instance.content = "changed test content"
+            instance.save()
+            reversion.revision.user = user2
+
+        new_version, old_version = reversion.get_for_object_reference(Page,
+                                                                    instance.pk)
+
         request, context = self._prepare_request(old_version, new_version)
         response = render(request, self.template, context)
 
         self.assertHasElement(response,
                               ".wikify-old .wikify-user:contains('%s')"
-                              % user_name1)
+                              % user1.username)
         self.assertHasElement(response,
                               ".wikify-new .wikify-user:contains('%s')"
-                              % user_name2)
+                              % user2.username)
 
     def test_diff_template_has_ip_of_changes(self):
         ip_address = '127.0.0.1'
-        old_version, new_version = construct_versions(version_count=2,
-                                                      ip_address=ip_address)
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.add_meta(VersionMeta,
+                                        ip_address=ip_address)
+        with reversion.revision:
+            instance.content = "changed test content"
+            instance.save()
+            reversion.revision.add_meta(VersionMeta,
+                                        ip_address=ip_address)
+        new_version, old_version = reversion.get_for_object_reference(Page,
+                                                                    instance.pk)
+
         request, context = self._prepare_request(old_version, new_version)
         response = render(request, self.template, context)
 
@@ -364,23 +461,30 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
                               % ip_address)
 
     def test_diff_template_has_comment(self):
-        comment1 = 'test comment1'
-        old_version = construct_version(comment=comment1)
-        comment2 = 'test comment2'
-        new_version = construct_version(comment=comment2)
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+            reversion.revision.comment = 'test comment1'
+
+        with reversion.revision:
+            instance.content = "changed test content"
+            instance.save()
+            reversion.revision.comment = 'test comment2'
+
+        new_version, old_version = reversion.get_for_object_reference(Page,
+                                                                    instance.pk)
         request, context = self._prepare_request(old_version, new_version)
         response = render(request, self.template, context)
 
         self.assertHasElement(response,
                               ".wikify-old .wikify-comment:contains('%s')"
-                              % comment1)
+                              % "test comment1")
         self.assertHasElement(response,
                               ".wikify-new .wikify-comment:contains('%s')"
-                              % comment2)
+                              % "test comment2")
 
     def test_diff_template_shows_next_version_link(self):
-        old_version, new_version, next_version = construct_versions(
-                                                                version_count=3)
+        old_version, new_version, next_version = construct_versions(3)
         request, context = self._prepare_request(old_version,
                                                  new_version,
                                                  next_version)
@@ -390,7 +494,7 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
                               "a:contains('next')")
 
     def test_diff_template_shows_previous_version_link(self):
-        old_version, new_version = construct_versions(version_count=2)
+        old_version, new_version = construct_versions(2)
         request, context = self._prepare_request(old_version, new_version)
         response = render(request, self.template, context)
 
@@ -398,7 +502,7 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
                               "a:contains('previous')")
 
     def test_diff_template_shows_no_next_when_viewing_last_version(self):
-        old_version, new_version = construct_versions(version_count=2)
+        old_version, new_version = construct_versions(2)
         request, context = self._prepare_request(old_version, new_version)
         response = render(request, self.template, context)
 
@@ -406,7 +510,11 @@ class DiffTemplateTest(TemplateTestMixin, unittest.TestCase):
                                 "a:contains('next')")
 
     def test_diff_template_shows_no_previous_if_viewing_first_version(self):
-        new_version = construct_version()
+        with reversion.revision:
+            instance = Page.objects.create(title=get_unique_page_title(),
+                                           content="test content")
+        new_version = reversion.get_for_object_reference(Page, instance.pk)[0]
+
         request, context = self._prepare_request(None, new_version)
         response = render(request, self.template, context)
 
