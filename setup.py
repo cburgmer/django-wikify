@@ -1,4 +1,6 @@
-from distutils.core import setup
+import ez_setup
+ez_setup.use_setuptools()
+from setuptools import setup
 
 setup(name="django-wikify",
       #version="0.1",
@@ -10,6 +12,9 @@ setup(name="django-wikify",
       packages=["wikify"],
       package_dir={"": "src"},
       package_data = {"wikify": ["static/wikify/*.css", "templates/wikify/*.html"]},
+      install_requires = ['Django', 'django_reversion', 'diff_match_patch'],
+      tests_require = ['lxml', 'fudge'],
+      test_suite = "example.runtests.runtests",
       classifiers=["Development Status :: 3 - Alpha",
                    "Environment :: Web Environment",
                    "Intended Audience :: Developers",

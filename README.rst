@@ -34,3 +34,8 @@ Requirements
 - Django >= 1.3
 - django-reversion >= 1.4
 - diff-match-patch
+
+Run unit tests
+==============
+
+$ python setup.py test
