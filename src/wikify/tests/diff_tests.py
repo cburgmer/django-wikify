@@ -1,5 +1,6 @@
-import unittest
 import itertools
+
+from django.utils import unittest
 
 try:
     from wikify.diff_utils import side_by_side_diff, context_diff

@@ -1,7 +1,7 @@
 from urllib2 import urlparse
 import fudge
-import unittest
 
+from django.utils import unittest
 from django.test import TestCase
 from django.db import models
 from django.http import HttpResponse
