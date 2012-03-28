@@ -12,7 +12,10 @@ setup(name="django-wikify",
       packages=["wikify"],
       package_dir={"": "src"},
       package_data = {"wikify": ["static/wikify/*.css", "templates/wikify/*.html"]},
-      install_requires = ['Django', 'django_reversion', 'diff_match_patch'],
+      dependency_links = [
+          "http://google-diff-match-patch.googlecode.com/svn/trunk/python2/diff_match_patch.py#egg=diff_match_patch-py2_svn"
+      ],
+      install_requires = ['django', 'django_reversion', 'diff_match_patch==py2_svn'],
       tests_require = ['lxml', 'fudge'],
       test_suite = "example.runtests.runtests",
       classifiers=["Development Status :: 3 - Alpha",
