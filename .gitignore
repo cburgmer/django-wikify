@@ -4,3 +4,4 @@ env
 *.egg
 build
 dist
+.idea
