@@ -1,0 +1,2 @@
+dj_database_url
+-e git+git://github.com/cburgmer/django-wikify.git@$GIT_COMMIT_HASH$#egg=django-wikify

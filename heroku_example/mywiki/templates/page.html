@@ -1,0 +1,22 @@
+{% load markup %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ object_id }}</title>
+</head>
+
+<body>
+    <h1>{{ object_id }}</h1>
+
+    {% if page %}
+        <a href="?action=edit">edit</a>,
+        <a href="?action=versions">versions</a>
+
+        <p>
+            {{ page.content }}
+        </p>
+    {% else %}
+        <a href="?action=edit">create</a>
+    {% endif %}
+
+</body>
