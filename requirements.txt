@@ -1,0 +1,3 @@
+django_reversion>=1.6
+Django
+diff_match_patch
