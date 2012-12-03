@@ -1,6 +1,8 @@
 Wikify is a lightweight module to turn your static Django model views into
 full wiki pages.
 
+Try it out: http://django-wikify.herokuapp.com/
+
 Rationale
 =========
 Wikify comes with a small and simple set of loosely coupled views, backed by
