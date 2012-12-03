@@ -15,8 +15,8 @@ setup(name="django-wikify",
       dependency_links = [
           "http://google-diff-match-patch.googlecode.com/svn/trunk/python2/diff_match_patch.py#egg=diff_match_patch-py2_svn"
       ],
-      install_requires = ['django_reversion>=1.6    ', 'Django', 'diff_match_patch==py2_svn'],
-      tests_require = ['lxml', 'fudge'],
+      install_requires = ['django_reversion>=1.6', 'Django', 'diff_match_patch'],
+      tests_require = ['lxml', 'cssselect', 'fudge'],
       test_suite = "example.runtests.runtests",
       classifiers=["Development Status :: 3 - Alpha",
                    "Environment :: Web Environment",

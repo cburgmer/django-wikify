@@ -28,6 +28,17 @@ Each version stores:
 - an optional comment
 - a copy of the instance at this time
 
+Install & Example
+=================
+
+Quick install:
+
+    $ virtualenv env
+    $ source env/bin/activate
+    $ python setup.py develop
+
+To run the example see `example/README.rst`.
+
 Requirements
 ============
 
@@ -38,4 +49,4 @@ Requirements
 Run unit tests
 ==============
 
-$ python setup.py test
+    $ python setup.py test
