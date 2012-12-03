@@ -5,7 +5,7 @@ from django.utils import unittest
 from django.test import TestCase
 from django.db import models
 from django.http import HttpResponse
-from django.conf.urls.defaults import patterns
+from django.conf.urls import patterns
 import reversion
 
 from wikify import wikify
