@@ -37,7 +37,7 @@ Quick install:
     $ source env/bin/activate
     $ python setup.py develop
 
-To run the example see `example/README.rst`.
+To run the example see `example/README.md`.
 
 Requirements
 ============
@@ -48,5 +48,6 @@ Requirements
 
 Run unit tests
 ==============
+[![Build Status](https://secure.travis-ci.org/cburgmer/django-wikify.png)](https://travis-ci.org/cburgmer/django-wikify)
 
     $ python setup.py test
