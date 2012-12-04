@@ -13,7 +13,7 @@
         <a href="?action=versions">versions</a>
 
         <p>
-            {{ page.content }}
+            {{ page.content|markdown:"safe,wikilinks(end_url=)" }}
         </p>
     {% else %}
         <a href="?action=edit">create</a>
