@@ -1,4 +1,4 @@
 include src/wikify/templates/wikify/*.html
 include src/wikify/static/wikify/*.css
-include README.rst
+include README.md
 include LICENSE
