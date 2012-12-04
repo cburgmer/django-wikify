@@ -2,5 +2,10 @@ language: python
 python:
   - "2.6"
   - "2.7"
+env:
+  global:
+    - secure: "EfEZ9rr6SJQ12ZKuRE2RNoD9XIBCOyVH9VMo2EYPZ8yQlRk3LxzSj8sOZR+3\nAAEVYGAJQQLqRIS5mRtQ3yIjfQ2IKovUmOlq9apG9xJ3UjU4e1lwBO+QqxH4\nKsP+mKG+b/p+4GwnquyknWyuoaFTwHNWlIeBqxAhJ9lZ6tK0lQ0="
 script:
   - python setup.py test
+after_script:
+  - cd heroku_example && bash deploy.sh
