@@ -20,7 +20,7 @@ cat requirements.template | sed "s/\\\$GIT_COMMIT_HASH\\\$/$GIT_COMMIT_HASH/" > 
 git init
 git add .
 git commit -m "Git commit $GIT_COMMIT_HASH"
-git remote add heroku git@heroku.com:agile-eyrie-2365.git
+git remote add heroku git@heroku.com:django-wikify.git
 
 # Merge with heroku copy
 git pull heroku master
